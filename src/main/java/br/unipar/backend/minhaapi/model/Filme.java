@@ -1,7 +1,15 @@
 package br.unipar.backend.minhaapi.model;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+
+@Entity // Indicar que é uma Tabela
 public class Filme {
 
+    @Id // Indicar que é a Chave primaria
+    @GeneratedValue(strategy = GenerationType.IDENTITY)//Gerar o ID sequencial
     private int id;
     private String titulo;
     private String diretor;

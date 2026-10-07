@@ -1,112 +1,79 @@
 package br.unipar.backend.minhaapi.controller;
 
 import br.unipar.backend.minhaapi.model.Filme;
+import br.unipar.backend.minhaapi.repository.FilmeRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
 @RequestMapping("/filmes")
 public class FilmeController {
 
-    private List<Filme> filmes = new ArrayList<>();
-    private int id = 1;
+    private final FilmeRepository filmeRepository;
 
+    public FilmeController(FilmeRepository filmeRepository) {
+        this.filmeRepository = filmeRepository;
+    }
+
+    // Buscar Todos os Filmes
+    @GetMapping
+    public ResponseEntity<List<Filme>> listarFilmes() {
+        return ResponseEntity.ok(filmeRepository.findAll());
+    }
+
+    // Buscar um Filme pelo ID
     @GetMapping("/{id}")
     public ResponseEntity<Filme> buscarPorId(@PathVariable int id) {
-
-        for (Filme filme : filmes) {
-            if (filme.getId() == id) {
-                return ResponseEntity.ok(filme);
-            }
-        }
-
-
-        return ResponseEntity.notFound().build();
+        return filmeRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
+    // Cadastrar um Novo Filme
     @PostMapping
     public ResponseEntity<Filme> cadastrarFilme(@RequestBody Filme filme) {
-        filme.setId(id);
-        id++;
-
-        filmes.add(filme);
-
-        return ResponseEntity.ok(filme);
+        Filme filmeSalvo = filmeRepository.save(filme);
+        return ResponseEntity.ok(filmeSalvo);
     }
 
+    // Atualizar um Filme Via ID
     @PutMapping("/{id}")
-    public ResponseEntity<Filme> atualizarFilme(@PathVariable int id, @RequestBody Filme filmeAtualizado) {
+    public ResponseEntity<Filme> atualizarFilme(
+            @PathVariable int id,
+            @RequestBody Filme filmeAtualizado) {
 
-        for (Filme filme : filmes) {
-            if (filme.getId() == id) {
+        return filmeRepository.findById(id)
+                .map(filme -> {
+                    filme.setTitulo(filmeAtualizado.getTitulo());
+                    filme.setDiretor(filmeAtualizado.getDiretor());
+                    filme.setGenero(filmeAtualizado.getGenero());
+                    filme.setAno(filmeAtualizado.getAno());
 
-                filme.setTitulo(filmeAtualizado.getTitulo());
-                filme.setDiretor(filmeAtualizado.getDiretor());
-                filme.setGenero(filmeAtualizado.getGenero());
-                filme.setAno(filmeAtualizado.getAno());
+                    filmeRepository.save(filme);
 
-                return ResponseEntity.ok(filme);
-            }
-        }
-
-        return ResponseEntity.notFound().build();
+                    return ResponseEntity.ok(filme);
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
+    // Excluir um Filme Via ID
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluirFilme(@PathVariable int id) {
 
-        for (Filme filme : filmes) {
-            if (filme.getId() == id) {
-                filmes.remove(filme);
-                return ResponseEntity.noContent().build();
-            }
+        if (!filmeRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.notFound().build();
-    }
+        filmeRepository.deleteById(id);
 
-    //Pelo menos três filtros com @RequestParam;
-    //Possibilidade de combinar filtros;
-    @GetMapping("/filtro")
-    public ResponseEntity<List<Filme>> filtrarFilmes(
-            @RequestParam(required = false) String titulo,
-            @RequestParam(required = false) String diretor,
-            @RequestParam(required = false) String genero,
-            @RequestParam(required = false) Integer ano) {
-
-        List<Filme> resultado = new ArrayList<>();
-
-        for (Filme filme : filmes) {
-
-            boolean corresponde = true;
-
-            if (titulo != null && !filme.getTitulo().equalsIgnoreCase(titulo)) {
-                corresponde = false;
-            }
-
-            if (diretor != null && !filme.getDiretor().equalsIgnoreCase(diretor)) {
-                corresponde = false;
-            }
-
-            if (genero != null && !filme.getGenero().equalsIgnoreCase(genero)) {
-                corresponde = false;
-            }
-
-            if (ano != null && filme.getAno() != ano) {
-                corresponde = false;
-            }
-
-            if (corresponde) {
-                resultado.add(filme);
-            }
-        }
-
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.noContent().build();
     }
 }
+
+
+
 
 
 
